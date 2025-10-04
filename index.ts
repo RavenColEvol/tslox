@@ -49,4 +49,4 @@ export class Lox {
 }
 
 const lox = new Lox();
-lox.run('var ravi = true;')
+lox.run('/* support for /* nested */ c comments which should also handle nested and new line */ var a = 10;')

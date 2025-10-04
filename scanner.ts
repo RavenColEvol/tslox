@@ -151,6 +151,29 @@ export class Scanner {
       case '/': {
         if (this.match('/')) {
           while(this.peek() != '\n' && !this.isAtEnd()) this.advance();
+        } else if (this.match('*')) {
+          let nest = 1;
+          while (!this.isAtEnd() && nest > 0) {
+            const currentChar = this.peek();
+            const nextChar = this.peekNext();
+            
+            if (currentChar === '/' && nextChar === '*') {
+              nest++;
+              this.advance(); // consume '/'
+              this.advance(); // consume '*'
+            } else if (currentChar === '*' && nextChar === '/') {
+              nest--;
+              this.advance(); // consume '*'
+              this.advance(); // consume '/'
+            } else {
+              if (currentChar === '\n') this.line++;
+              this.advance();
+            }
+          }
+          
+          if (nest > 0) {
+            Lox.error(this.line, "Unterminated block comment.");
+          }
         } else {
           this.addToken(TokenType.SLASH);
         }
