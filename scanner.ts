@@ -1,6 +1,6 @@
 import { Lox } from "./index";
 
-enum TokenType {
+export enum TokenType {
   // Single-character tokens.
   LEFT_PAREN = 'LEFT_PAREN',
   RIGHT_PAREN = 'RIGHT_PAREN',
@@ -50,7 +50,7 @@ enum TokenType {
   EOF = 'EOF'
 }
 
-class Token {
+export class Token {
   type: TokenType;
   lexeme: string;
   literal: unknown;
