@@ -5,30 +5,30 @@ const outputDir = path.resolve(import.meta.filename, '..', '..');
 
 const indent = '  ';
 
-defineAst(outputDir, 'Expr', [['TokenType', './scanner']], {
-  Assign: 'name: TokenType, value: Expr',
-  Binary: 'left:Expr, operator:TokenType, right: Expr',
-  Call: 'callee:Expr, paren:TokenType, args: Expr[]',
+defineAst(outputDir, 'Expr', [['Token', './scanner']], {
+  Assign: 'name: Token, value: Expr',
+  Binary: 'left:Expr, operator:Token, right: Expr',
+  Call: 'callee:Expr, paren:Token, args: Expr[]',
   Grouping: 'expression:Expr',
   Literal: 'value: unknown',
-  Logical: ' left:Expr, operator:TokenType, right: Expr',
-  Unary: 'operator:TokenType, right: Expr',
-  Variable: 'name:TokenType'
+  Logical: 'left:Expr, operator:Token, right: Expr',
+  Unary: 'operator:Token, right: Expr',
+  Variable: 'name:Token'
 })
 
-defineAst(outputDir, 'Stmt', [['Expr', './Expr'], ['TokenType', './scanner']], {
+defineAst(outputDir, 'Stmt', [['Expr', './expr'], ['Token', './scanner']], {
   Block: 'statements: Stmt[]',
   Expression: 'expression: Expr',
-  Function: 'name:TokenType, parameters:TokenType[], body:Stmt[]',
+  Function: 'name:Token, parameters:Token[], body:Stmt[]',
   If: 'condition: Expr, thenBranch:Stmt, elseBranch:Stmt',
   Print: 'expression: Expr',
-  Return: 'keyword:TokenType, value: Expr',
-  Var: 'name:TokenType, initializer: Expr',
+  Return: 'keyword:Token, value: Expr',
+  Var: 'name:Token, initializer: Expr',
   While: 'condition: Expr, body:Stmt'
 })
 
 function defineAst(outputDir: string, baseName: string, imports: string[][], types: Record<string, string>) {
-  const outputPath = path.resolve(outputDir, baseName + '.ts')
+  const outputPath = path.resolve(outputDir, baseName.toLowerCase() + '.ts')
   const writer = fs.createWriteStream(outputPath)
 
   // HEADER
@@ -44,7 +44,7 @@ function defineAst(outputDir: string, baseName: string, imports: string[][], typ
 
   // BASE CLASS
   writer.write(`export class ${baseName} {\n`);
-  writer.write(`${indent}accept (visitor: ${baseName}Visitor) {}\n`);
+  writer.write(`${indent}accept (visitor: ${baseName}Visitor<unknown>) {}\n`);
   writer.write(`}\n\n`);
 
   // ALL SUB CLASS
@@ -76,7 +76,7 @@ function defineType(writer: fs.WriteStream, baseName: string, className: string,
   })
   writer.write(`${indent}}\n\n`)
 
-  writer.write(`${indent}accept (visitor: ${baseName}Visitor) {\n`)
+  writer.write(`${indent}accept (visitor: ${baseName}Visitor<unknown>) {\n`)
   writer.write(`${indent}${indent}return visitor.visit${className}${baseName}(this)\n`)
   writer.write(`${indent}}\n`)
 
@@ -84,10 +84,10 @@ function defineType(writer: fs.WriteStream, baseName: string, className: string,
 }
 
 function defineVisitor(writer: fs.WriteStream, baseName: string, types: Record<string, string>) {
-  writer.write(`export abstract class ${baseName}Visitor {\n`);
+  writer.write(`export abstract class ${baseName}Visitor<T> {\n`);
   const classNames = Object.keys(types);
   const classNameMethods = classNames.map(className => 
-    `${indent}visit${className}${baseName}(expr: ${className}): void {}`
+    `${indent} abstract visit${className}${baseName}(expr: ${className}): T`
   ).join('\n');
   writer.write(classNameMethods);
   writer.write(`\n}\n\n`);

@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "execute": "NODE_OPTIONS=\"--loader ts-node/esm --experimental-specifier-resolution=node\" node",
     "test": "NODE_OPTIONS=\"--loader ts-node/esm --experimental-specifier-resolution=node\" node index.ts",
     "generateAST": "NODE_OPTIONS=\"--loader ts-node/esm --experimental-specifier-resolution=node\" OUTPUT_DIR=.. node tool/generateAst.ts"
   },
