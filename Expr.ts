@@ -13,8 +13,8 @@ export abstract class ExprVisitor<T> {
    abstract visitVariableExpr(expr: Variable): T
 }
 
-export class Expr {
-  accept (visitor: ExprVisitor<unknown>) {}
+export abstract class Expr {
+  abstract accept(visitor: ExprVisitor<unknown>): unknown;
 }
 
 export class Assign extends Expr {

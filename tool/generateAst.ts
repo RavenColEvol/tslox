@@ -43,8 +43,8 @@ function defineAst(outputDir: string, baseName: string, imports: string[][], typ
   defineVisitor(writer, baseName, types);
 
   // BASE CLASS
-  writer.write(`export class ${baseName} {\n`);
-  writer.write(`${indent}accept (visitor: ${baseName}Visitor<unknown>) {}\n`);
+  writer.write(`export abstract class ${baseName} {\n`);
+  writer.write(`${indent}abstract accept (visitor: ${baseName}Visitor<unknown>): unknown\n`);
   writer.write(`}\n\n`);
 
   // ALL SUB CLASS

@@ -1,8 +1,10 @@
+import { Interpreter, RuntimeError } from "./interpreter";
 import { Parser } from "./parser";
 import { Scanner, Token, TokenType } from "./scanner";
 import { readFileSync } from 'fs';
 export class Lox {
   static hadError = false;
+  static hadRuntimeError = false;
 
   constructor(...args: string[]) {
     const { runFile, runPrompt } = this;
@@ -20,9 +22,12 @@ export class Lox {
     const source = readFileSync(path, {
       encoding: 'utf-8'
     });
-    this.run(source);
+    const tokens = this.run(source);
     if (Lox.hadError) {
       process.exit(65);
+    }
+    if (Lox.hadRuntimeError) {
+      process.exit(70);
     }
   }
 
@@ -33,8 +38,10 @@ export class Lox {
   run(source: string) {
     const scanner = new Scanner(source);
     const tokens = scanner.scanTokens();
-
-    return tokens
+    const expressions = new Parser(tokens).parse();
+    if (!expressions) return;
+    const interpreter = new Interpreter();
+    interpreter.interpret(expressions)
   }
 
   static error(line: number, message: string) {
@@ -49,6 +56,11 @@ export class Lox {
     }
   }
 
+  static runtimeError(err: RuntimeError) {
+    console.log(err.getMessage() + `\n[line ${err.token.line}]`)
+    Lox.hadRuntimeError = true;
+  }
+
   static report(line: number, where: string, message: string) {
     console.log(
       `[line ${line}] Error ${where}: ${message}`
@@ -58,7 +70,4 @@ export class Lox {
 }
 
 const lox = new Lox();
-const tokens = lox.run('1 * 2 / 3');
-const scanner = new Parser(tokens);
-const expression = scanner.parse();
-console.log(expression);
+lox.run('1 + 3');
