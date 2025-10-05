@@ -1,4 +1,5 @@
-import { Scanner } from "./scanner";
+import { Parser } from "./parser";
+import { Scanner, Token, TokenType } from "./scanner";
 import { readFileSync } from 'fs';
 export class Lox {
   static hadError = false;
@@ -33,11 +34,19 @@ export class Lox {
     const scanner = new Scanner(source);
     const tokens = scanner.scanTokens();
 
-    console.log(tokens);
+    return tokens
   }
 
   static error(line: number, message: string) {
     Lox.report(line, "", message);
+  }
+
+  static parseError(token: Token, message: string) {
+    if (token.type === TokenType.EOF) {
+      Lox.report(token.line, "at end", message);
+    } else {
+      Lox.report(token.line, "at '" + token.lexeme + "'", message);
+    }
   }
 
   static report(line: number, where: string, message: string) {
@@ -49,4 +58,7 @@ export class Lox {
 }
 
 const lox = new Lox();
-lox.run('/* support for /* nested */ c comments which should also handle nested and new line */ var a = 10;')
+const tokens = lox.run('1 * 2 / 3');
+const scanner = new Parser(tokens);
+const expression = scanner.parse();
+console.log(expression);

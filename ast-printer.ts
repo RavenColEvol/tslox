@@ -1,7 +1,7 @@
 import { Assign, Binary, Call, Expr, ExprVisitor, Grouping, Literal, Logical, Unary, Variable } from "./expr";
 import { Token, TokenType } from "./scanner";
 
-export class AstPrinter extends ExprVisitor<string> {
+export class AstPrinter implements ExprVisitor<string> {
   print(expr: Expr) {
     return expr.accept(this);
   }

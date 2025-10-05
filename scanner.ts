@@ -195,9 +195,9 @@ export class Scanner {
       default: {
         if (this.isDigit(c)) {
           this.number();
-        } else if(this.isAlphaNumeric(this.peek())) {
+        } else if(this.isAlphaNumeric(c)) {
           this.identifier();
-        }else {
+        } else {
           Lox.error(this.line, "Unexpected character.");
         }
         break;
