@@ -23,7 +23,7 @@ defineAst(outputDir, 'Stmt', [['Expr', './expr'], ['Token', './scanner']], {
   If: 'condition: Expr, thenBranch:Stmt, elseBranch:Stmt',
   Print: 'expression: Expr',
   Return: 'keyword:Token, value: Expr',
-  Var: 'name:Token, initializer: Expr',
+  Var: 'name:Token, initializer: Expr | null',
   While: 'condition: Expr, body:Stmt'
 })
 

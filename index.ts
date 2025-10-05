@@ -38,10 +38,10 @@ export class Lox {
   run(source: string) {
     const scanner = new Scanner(source);
     const tokens = scanner.scanTokens();
-    const expressions = new Parser(tokens).parse();
-    if (!expressions) return;
+    const statements = new Parser(tokens).parse();
+    if (!statements) return;
     const interpreter = new Interpreter();
-    interpreter.interpret(expressions)
+    interpreter.interpret(statements)
   }
 
   static error(line: number, message: string) {
@@ -70,4 +70,4 @@ export class Lox {
 }
 
 const lox = new Lox();
-lox.run('1 + 3');
+lox.run('var a = 1; { var a = 2; print a; } print a;');

@@ -14,8 +14,8 @@ export abstract class StmtVisitor<T> {
    abstract visitWhileStmt(expr: While): T
 }
 
-export class Stmt {
-  accept (visitor: StmtVisitor<unknown>) {}
+export abstract class Stmt {
+  abstract accept (visitor: StmtVisitor<unknown>): unknown
 }
 
 export class Block extends Stmt {
@@ -108,9 +108,9 @@ export class Return extends Stmt {
 
 export class Var extends Stmt {
   name:Token
-  initializer: Expr
+  initializer: Expr | null
 
-  constructor (name:Token, initializer: Expr) {
+  constructor (name:Token, initializer: Expr | null) {
     super()
     this.name = name
     this.initializer = initializer

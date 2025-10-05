@@ -1,19 +1,41 @@
 import { Lox } from ".";
+import { Environment } from "./environment";
 import { Assign, Binary, Call, Expr, ExprVisitor, Grouping, Literal, Logical, Unary, Variable } from "./expr";
 import { Token, TokenType } from "./scanner";
+import { Block, Expression, Function, If, Print, Return, Stmt, StmtVisitor, Var, While } from "./stmt";
 
-export class Interpreter implements ExprVisitor<unknown> {
-  interpret(expression: Expr) {
+export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
+  environment: Environment = new Environment();
+  interpret(statements: Stmt[]) {
     try {
-      const value = this.evaluate(expression);
-      console.log(value);
+      for(const statement of statements) {
+        this.execute(statement);
+      }
     } catch(err) {
       Lox.runtimeError(err as RuntimeError);
     }
   }
 
+  private execute(statement: Stmt) {
+    statement.accept(this);
+  }
+
+  private executeBlock(statements: Stmt[], environment: Environment) {
+    const previous = this.environment;
+    try {
+      this.environment = environment;
+      for(const statement of statements) {
+        this.execute(statement);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
+
   visitAssignExpr(expr: Assign): unknown {
-    throw new Error("Method not implemented.");
+    const value = this.evaluate(expr.value);
+    this.environment.assign(expr.name, value);
+    return value;
   }
   visitBinaryExpr(expr: Binary): unknown {
     const left = this.evaluate<number>(expr.left);
@@ -80,6 +102,41 @@ export class Interpreter implements ExprVisitor<unknown> {
     return null;
   }
   visitVariableExpr(expr: Variable): unknown {
+    return this.environment.get(expr.name);
+  }
+
+  visitBlockStmt(statement: Block): unknown {
+    this.executeBlock(statement.statements, new Environment(this.environment));
+    return null;
+  }
+
+  visitExpressionStmt(stmt: Expression): unknown {
+    this.evaluate(stmt.expression);
+    return null;
+  }
+  visitFunctionStmt(expr: Function): unknown {
+    throw new Error("Method not implemented.");
+  }
+  visitIfStmt(expr: If): unknown {
+    throw new Error("Method not implemented.");
+  }
+  visitPrintStmt(stmt: Print): unknown {
+    const value = this.evaluate(stmt.expression);
+    console.log(value);
+    return null;
+  }
+  visitReturnStmt(expr: Return): unknown {
+    throw new Error("Method not implemented.");
+  }
+  visitVarStmt(stmt: Var): unknown {
+    let value = null;
+    if (stmt.initializer != null) {
+      value = this.evaluate(stmt.initializer);
+    }
+    this.environment.define(stmt.name.lexeme, value);
+    return null;
+  }
+  visitWhileStmt(expr: While): unknown {
     throw new Error("Method not implemented.");
   }
 

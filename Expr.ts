@@ -14,7 +14,7 @@ export abstract class ExprVisitor<T> {
 }
 
 export abstract class Expr {
-  abstract accept(visitor: ExprVisitor<unknown>): unknown;
+  abstract accept (visitor: ExprVisitor<unknown>): unknown
 }
 
 export class Assign extends Expr {
