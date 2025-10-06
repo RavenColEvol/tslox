@@ -93,9 +93,9 @@ export class Print extends Stmt {
 
 export class Return extends Stmt {
   keyword:Token
-  value: Expr
+  value: Expr | null
 
-  constructor (keyword:Token, value: Expr) {
+  constructor (keyword:Token, value: Expr | null) {
     super()
     this.keyword = keyword
     this.value = value

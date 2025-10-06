@@ -5,7 +5,8 @@ import { Token, TokenType } from "./scanner";
 import { Block, Expression, Function, If, Print, Return, Stmt, StmtVisitor, Var, While } from "./stmt";
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
-  environment: Environment = new Environment();
+  globals = new Environment();
+  environment: Environment = this.globals;
   interpret(statements: Stmt[]) {
     try {
       for(const statement of statements) {
@@ -20,7 +21,7 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     statement.accept(this);
   }
 
-  private executeBlock(statements: Stmt[], environment: Environment) {
+  executeBlock(statements: Stmt[], environment: Environment) {
     const previous = this.environment;
     try {
       this.environment = environment;
@@ -79,7 +80,21 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     return null;
   }
   visitCallExpr(expr: Call): unknown {
-    throw new Error("Method not implemented.");
+    const callee = this.evaluate<TsLoxCallable>(expr.callee);
+    const args = [];
+    for(const arg of expr.args) {
+      args.push(this.evaluate(arg))
+    }
+    if (!(callee instanceof TsLoxFunction)) {
+      throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+    }
+
+    const func = callee;
+
+    if (args.length != func.arity()) {
+      throw new RuntimeError(expr.paren, `Expected ${func.arity()} arguments but got ${args.length}.`)
+    }
+    return func.call(this, args);
   }
   visitGroupingExpr(expr: Grouping): unknown {
     return this.evaluate(expr);
@@ -122,8 +137,10 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     this.evaluate(stmt.expression);
     return null;
   }
-  visitFunctionStmt(expr: Function): unknown {
-    throw new Error("Method not implemented.");
+  visitFunctionStmt(stmt: Function): unknown {
+    const func = new TsLoxFunction(stmt, this.environment);
+    this.environment.define(stmt.name.lexeme, func);
+    return null;
   }
   visitIfStmt(stmt: If): unknown {
     if (this.evaluate(stmt.condition)) {
@@ -138,8 +155,10 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     console.log(value);
     return null;
   }
-  visitReturnStmt(expr: Return): unknown {
-    throw new Error("Method not implemented.");
+  visitReturnStmt(stmt: Return): unknown {
+    let value = null;
+    if (stmt.value != null) value = this.evaluate(stmt.value);
+    throw new ReturnRuntime(value);
   }
   visitVarStmt(stmt: Var): unknown {
     let value = null;
@@ -183,6 +202,42 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
   }
 }
 
+export abstract class TsLoxCallable {
+  abstract arity(): number;
+  abstract call(interpreter: Interpreter, args: any[]): any;
+  abstract toString(): string;
+}
+
+export class TsLoxFunction implements TsLoxCallable {
+  declaration: Function;
+  closure: Environment;
+  constructor(declaration: Function, closure: Environment) {
+    this.declaration = declaration;
+    this.closure = closure;
+  }
+  arity(): number {
+    return this.declaration.parameters.length;
+  }
+  call(interpreter: Interpreter, args: any[]) {
+    const environment = new Environment(this.closure);
+    for(let i = 0; i < this.declaration.parameters.length; i++) {
+      environment.define(
+        this.declaration.parameters[i].lexeme,
+        args[i]
+      )
+    }
+    try {
+      interpreter.executeBlock(this.declaration.body, environment);
+    } catch(returnValue) {
+      return (returnValue as ReturnRuntime).value;
+    }
+    return null;
+  }
+  toString(): string {
+    return `<fn ${this.declaration.name.lexeme}>`
+  }
+}
+
 export class RuntimeError {
   token: Token;
   message: string;
@@ -193,5 +248,12 @@ export class RuntimeError {
 
   getMessage() {
     return this.message;
+  }
+}
+
+export class ReturnRuntime {
+  value: any;
+  constructor(value: any) {
+    this.value = value;
   }
 }

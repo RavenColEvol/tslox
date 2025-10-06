@@ -1,7 +1,7 @@
 import { Lox } from ".";
-import { Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable } from "./expr";
+import { Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable } from "./expr";
 import { Token, TokenType } from "./scanner";
-import { Block, Expression, If, Print, Stmt, Var, While } from "./stmt";
+import { Block, Expression, Function, If, Print, Return, Stmt, Var, While } from "./stmt";
 
 export class Parser {
   current: number;
@@ -25,6 +25,9 @@ export class Parser {
 
   private declaration() {
     try {
+      if (this.match(TokenType.FUN)) {
+        return this.funDeclaration('function');
+      }
       if (this.match(TokenType.VAR)) {
         return this.varDeclaration();
       }
@@ -33,6 +36,23 @@ export class Parser {
       this.synchronize();
       return null;
     }
+  }
+
+  private funDeclaration(kind: string) {
+    const name = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
+    this.consume(TokenType.LEFT_PAREN, `Expect '(' after ${kind} name.`)
+    const params = [];
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        params.push(
+          this.consume(TokenType.IDENTIFIER, 'Expect parameter name.')
+        )
+      } while(this.match(TokenType.COMMA))
+    }
+    this.consume(TokenType.RIGHT_PAREN, `Expect ')' after parameters.`)
+    this.consume(TokenType.LEFT_BRACE, `Expect '{' before ${kind} body.`);
+    const body = this.block();
+    return new Function(name, params, body)
   }
 
   private varDeclaration() {
@@ -50,10 +70,21 @@ export class Parser {
   private statement() {
     if (this.match(TokenType.IF)) return this.ifStatement();
     if (this.match(TokenType.PRINT)) return this.printStatement();
-    if (this.match(TokenType.FOR)) return this.forStatement()
+    if (this.match(TokenType.FOR)) return this.forStatement();
+    if (this.match(TokenType.RETURN)) return this.returnStatement();
     if (this.match(TokenType.WHILE)) return this.whileStatement();
-    if (this.match(TokenType.LEFT_BRACE)) return this.block();
+    if (this.match(TokenType.LEFT_BRACE)) return new Block(this.block());
     return this.expressionStatement();
+  }
+
+  private returnStatement() {
+    const keyword = this.previous();
+    let result: Expr | null = null
+    if (!this.check(TokenType.SEMICOLON)) {
+      result = this.expression();
+    }
+    this.consume(TokenType.SEMICOLON, `Expected ';' after return value.`)
+    return new Return(keyword, result);
   }
 
   private forStatement(): Stmt {
@@ -98,7 +129,7 @@ export class Parser {
         body
       ])
     }
-    
+
     return body;
   }
 
@@ -124,7 +155,7 @@ export class Parser {
     return new If(condition, thenBranch, elseBranch);
   }
 
-  private block(): Stmt {
+  private block(): Stmt[] {
     const statements: Stmt[] = [];
     while(!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
       const declaration = this.declaration();
@@ -132,7 +163,7 @@ export class Parser {
       statements.push(declaration);
     }
     this.consume(TokenType.RIGHT_BRACE, `Expect '}' after block.`);
-    return new Block(statements);
+    return statements;
   }
 
   private printStatement() {
@@ -246,7 +277,30 @@ export class Parser {
       const right = this.unary();
       return new Unary(operator, right);
     }
-    return this.primary();
+    return this.call();
+  }
+
+  private call(): Expr {
+    let expr = this.primary();
+    while(true) {
+      if (this.match(TokenType.LEFT_PAREN)) {
+        expr = this.finishCall(expr);
+      } else {
+        break;
+      }
+    }
+    return expr;
+  }
+
+  private finishCall(callee: Expr): Expr {
+    const args: Expr[] = [];
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        args.push(this.expression());
+      } while(this.match(TokenType.COMMA))
+    }
+    const paren = this.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+    return new Call(callee, paren, args);
   }
 
   private primary(): Expr {
