@@ -88,7 +88,15 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     return expr.value;
   }
   visitLogicalExpr(expr: Logical): unknown {
-    throw new Error("Method not implemented.");
+    const left = this.evaluate(expr.left);
+
+    if (expr.operator.type === TokenType.OR) {
+      if (this.isTruthy(left)) return left;
+    } else {
+      if (!this.isTruthy(left)) return left;
+    }
+
+    return this.evaluate(expr.right);
   }
   visitUnaryExpr(expr: Unary): unknown {
     const right = this.evaluate<number>(expr.right);
@@ -117,8 +125,13 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
   visitFunctionStmt(expr: Function): unknown {
     throw new Error("Method not implemented.");
   }
-  visitIfStmt(expr: If): unknown {
-    throw new Error("Method not implemented.");
+  visitIfStmt(stmt: If): unknown {
+    if (this.evaluate(stmt.condition)) {
+      this.execute(stmt.thenBranch);
+    } else if (stmt.elseBranch != null) {
+      this.execute(stmt.elseBranch);
+    }
+    return null;
   }
   visitPrintStmt(stmt: Print): unknown {
     const value = this.evaluate(stmt.expression);
@@ -136,8 +149,11 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<unknown> {
     this.environment.define(stmt.name.lexeme, value);
     return null;
   }
-  visitWhileStmt(expr: While): unknown {
-    throw new Error("Method not implemented.");
+  visitWhileStmt(stmt: While): unknown {
+    while(this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body);
+    }
+    return null;
   }
 
   private isTruthy(value: unknown): boolean {

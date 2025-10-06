@@ -70,4 +70,12 @@ export class Lox {
 }
 
 const lox = new Lox();
-lox.run('var a = 1; { var a = 2; print a; } print a;');
+lox.run(`
+var a = 0;
+var temp;
+for (var b = 1; a < 10000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}
+`);

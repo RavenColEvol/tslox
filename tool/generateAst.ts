@@ -20,7 +20,7 @@ defineAst(outputDir, 'Stmt', [['Expr', './expr'], ['Token', './scanner']], {
   Block: 'statements: Stmt[]',
   Expression: 'expression: Expr',
   Function: 'name:Token, parameters:Token[], body:Stmt[]',
-  If: 'condition: Expr, thenBranch:Stmt, elseBranch:Stmt',
+  If: 'condition: Expr, thenBranch:Stmt, elseBranch:Stmt | null',
   Print: 'expression: Expr',
   Return: 'keyword:Token, value: Expr',
   Var: 'name:Token, initializer: Expr | null',
